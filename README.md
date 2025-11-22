@@ -4,16 +4,16 @@
 
 ## データ収集
 
-まず `beautifulsoup4` をインストールしてください。
+このリポジトリは [uv](https://docs.astral.sh/uv/) で構成管理しています。初めて利用する場合は依存関係を同期してください。
 
 ```bash
-pip install beautifulsoup4
+uv sync
 ```
 
-`fetch_aogashima_data.py` を実行すると、2021年3月〜2025年11月の各月に対して [公開されている時刻表ページ](https://tma.main.jp/tokai/aogashima.php) から日別データを取得し、`data/aogashima_ship_arrivals.csv` に集約します。
+同期後、`uv run` で `fetch_aogashima_data.py` を実行すると、2021年3月〜2025年11月の各月に対して [公開されている時刻表ページ](https://tma.main.jp/tokai/aogashima.php) から日別データを取得し、`data/aogashima_ship_arrivals.csv` に集約します。
 
 ```bash
-python fetch_aogashima_data.py
+uv run python fetch_aogashima_data.py
 ```
 
 出力されるCSVのカラムは次のとおりです。

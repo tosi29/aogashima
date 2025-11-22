@@ -1,0 +1,16 @@
+[project]
+name = "aogashima"
+version = "0.1.0"
+description = "Generate aggregated CSVs for Aogashima ferry operations"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.12",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = false
