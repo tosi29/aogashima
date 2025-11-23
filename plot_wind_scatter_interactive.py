@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 import json
+import math
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Any
 
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -54,7 +54,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def iter_vectors(input_path: Path) -> Iterable[Tuple[str, float, float, str]]:
+def load_vectors_and_rows(input_path: Path):
+    vectors: List[Tuple[str, float, float, str]] = []
+    table_rows: List[Dict[str, Any]] = []
     with input_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -62,6 +64,8 @@ def iter_vectors(input_path: Path) -> Iterable[Tuple[str, float, float, str]]:
             direction = row.get("max_wind_direction", "").strip()
             speed_str = row.get("max_wind_speed_mps", "").strip()
             date_str = row.get("date", "")
+            weekday = row.get("weekday", "")
+            from_status = row.get("from_aogashima_status", "unknown")
             if not direction or not speed_str:
                 continue
             if direction not in DIRECTION_DEGREES:
@@ -75,7 +79,19 @@ def iter_vectors(input_path: Path) -> Iterable[Tuple[str, float, float, str]]:
             x = speed * math.cos(theta)  # 東西成分
             y = speed * math.sin(theta)  # 南北成分
             month = str(int(date_str[5:7])) if len(date_str) >= 7 else ""
-            yield status, x, y, month
+            vectors.append((status, x, y, month))
+            table_rows.append(
+                {
+                    "date": date_str,
+                    "weekday": weekday,
+                    "to_status": status,
+                    "from_status": from_status,
+                    "max_wind_direction": direction,
+                    "max_wind_speed_mps": speed_str,
+                    "month": month,
+                }
+            )
+    return vectors, table_rows
 
 
 def build_payload(vectors: Iterable[Tuple[str, float, float, str]]):
@@ -123,9 +139,16 @@ def make_figure(traces: List[go.Scatter]) -> go.Figure:
     return fig
 
 
-def wrap_with_ui(fig_html: str, output_path: Path, data_store: Dict[str, Dict[str, List[float | str]]], months: List[str]) -> None:
+def wrap_with_ui(
+    fig_html: str,
+    output_path: Path,
+    data_store: Dict[str, Dict[str, List[float | str]]],
+    months: List[str],
+    table_rows: List[Dict[str, Any]],
+) -> None:
     month_options = "".join([f'<option value="{m}">{m}月</option>' for m in months])
     data_json = json.dumps(data_store)
+    table_json = json.dumps(table_rows)
     # チェックボックスと月セレクトでフィルタ
     template = f"""<!DOCTYPE html>
 <html lang="ja">
@@ -136,6 +159,14 @@ def wrap_with_ui(fig_html: str, output_path: Path, data_store: Dict[str, Dict[st
     body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 16px; }}
     .controls {{ margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }}
     label {{ margin-right: 8px; }}
+    .layout {{ display: flex; gap: 16px; align-items: flex-start; }}
+    .chart-col {{ flex: 2; min-width: 400px; }}
+    .table-col {{ flex: 1; min-width: 320px; }}
+    .table-container {{ max-height: 760px; overflow: auto; border: 1px solid #ddd; border-radius: 6px; }}
+    table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+    th, td {{ padding: 6px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }}
+    th {{ position: sticky; top: 0; background: #fafafa; z-index: 1; }}
+    tr:nth-child(even) td {{ background: #fcfcfc; }}
   </style>
 </head>
 <body>
@@ -151,44 +182,97 @@ def wrap_with_ui(fig_html: str, output_path: Path, data_store: Dict[str, Dict[st
       </select>
     </label>
   </div>
-  {fig_html}
+  <div class="layout">
+    <div class="chart-col">
+      {fig_html}
+    </div>
+    <div class="table-col">
+      <div class="table-container">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>曜</th>
+              <th>to_status</th>
+              <th>from_status</th>
+              <th>風向</th>
+              <th>風速(m/s)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
   <script>
     const dataStore = {data_json};
+    const tableData = {table_json};
     const traceIndex = {{ operational: 0, canceled: 1, unknown: 2 }};
     const plot = document.getElementById("wind-scatter");
     const monthSelect = document.getElementById("month-select");
+    const tbody = document.querySelector("#data-table tbody");
 
-    function filterByMonth() {{
-      const month = monthSelect.value;
+    function getSelectedStatuses() {{
+      const selected = [];
+      document.querySelectorAll('input[data-trace]').forEach(cb => {{
+        if (cb.checked) selected.push(cb.dataset.trace);
+      }});
+      return selected;
+    }}
+
+    function filterTraces(month, statuses) {{
       Object.keys(traceIndex).forEach(status => {{
         const idx = traceIndex[status];
         const store = dataStore[status];
         const filteredX = [];
         const filteredY = [];
         for (let i = 0; i < store.month.length; i++) {{
-          if (month === "all" || store.month[i] === month) {{
+          if ((month === "all" || store.month[i] === month) && statuses.includes(status)) {{
             filteredX.push(store.x[i]);
             filteredY.push(store.y[i]);
           }}
         }}
         Plotly.restyle(plot, {{x: [filteredX], y: [filteredY]}}, [idx]);
       }});
-      updateVisibility();
     }}
 
-    function updateVisibility() {{
+    function updateVisibility(statuses) {{
       const vis = Array(plot.data.length).fill(false);
-      document.querySelectorAll('input[data-trace]').forEach(cb => {{
-        if (cb.checked) {{
-          const idx = traceIndex[cb.dataset.trace];
-          vis[idx] = true;
-        }}
+      statuses.forEach(status => {{
+        const idx = traceIndex[status];
+        vis[idx] = true;
       }});
       Plotly.restyle(plot, 'visible', vis);
     }}
 
-    document.querySelectorAll('input[data-trace]').forEach(cb => cb.addEventListener('change', updateVisibility));
-    monthSelect.addEventListener('change', filterByMonth);
+    function renderTable(month, statuses) {{
+      tbody.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      tableData.forEach(row => {{
+        if ((month === "all" || row.month === month) && statuses.includes(row.to_status)) {{
+          const tr = document.createElement("tr");
+          ["date","weekday","to_status","from_status","max_wind_direction","max_wind_speed_mps"].forEach(key => {{
+            const td = document.createElement("td");
+            td.textContent = row[key];
+            tr.appendChild(td);
+          }});
+          frag.appendChild(tr);
+        }}
+      }});
+      tbody.appendChild(frag);
+    }}
+
+    function applyFilters() {{
+      const month = monthSelect.value;
+      const statuses = getSelectedStatuses();
+      filterTraces(month, statuses);
+      updateVisibility(statuses);
+      renderTable(month, statuses);
+    }}
+
+    document.querySelectorAll('input[data-trace]').forEach(cb => cb.addEventListener('change', applyFilters));
+    monthSelect.addEventListener('change', applyFilters);
+    applyFilters();
   </script>
 </body>
 </html>
@@ -200,11 +284,11 @@ def wrap_with_ui(fig_html: str, output_path: Path, data_store: Dict[str, Dict[st
 
 def main() -> None:
     args = parse_args()
-    vectors = iter_vectors(args.input)
+    vectors, table_rows = load_vectors_and_rows(args.input)
     traces, data_store, months = build_payload(vectors)
     fig = make_figure(traces)
     fig_html = pio.to_html(fig, include_plotlyjs="cdn", full_html=False, div_id="wind-scatter")
-    wrap_with_ui(fig_html, args.output, data_store, months)
+    wrap_with_ui(fig_html, args.output, data_store, months, table_rows)
 
 
 if __name__ == "__main__":
