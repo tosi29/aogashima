@@ -53,3 +53,16 @@ uv run python plot_wind_scatter_interactive.py
 `plots/wind_scatter_interactive.html` が生成され、ブラウザで開くと `operational` / `canceled` / `unknown` をチェックボックスで制御できます。X軸は東西（+が東）、Y軸は南北（+が北）方向の風速成分です。
 
 - 「月」セレクトで、全期間（all）または特定の月（1〜12月）のデータに絞り込めます（シーズナリティ確認用）。
+- 右側に元データのテーブルを表示し、フィルタと連動して更新されます（表示される行は to_status に従う）。
+
+## 風速に基づく回帰分析
+
+風速だけを説明変数に、運航/欠航（to もしくは from のどちらか）を目的変数にしたロジスティック回帰を試すスクリプトです。
+
+```bash
+uv run python wind_regression.py --route to    # 八丈島→青ヶ島
+# または
+uv run python wind_regression.py --route from  # 青ヶ島→八丈島
+```
+
+テスト精度、ROC-AUC、分類レポート、モデル係数、および数点の風速における推定欠航確率を出力します。併せてロジスティック曲線と生データ点の可視化を `plots/wind_regression_<route>.html` に保存します。
