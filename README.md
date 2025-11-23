@@ -22,3 +22,22 @@ uv run python fetch_aogashima_data.py
 - `to_aogashima`: 八丈島発→青ヶ島行きの運航・欠航表示
 - `from_aogashima`: 青ヶ島発→八丈島行きの運航・欠航表示
 - `max_wind`: アメダス八丈島の最大風速（方位と数値）
+
+## バリデーションとクレンジング
+
+可視化・分析前に、日時やステータス、風速表記を整形したクレンジング済みCSVを作成できます。
+
+```bash
+uv run python clean_aogashima_data.py
+```
+
+`data/aogashima_ship_arrivals_clean.csv` が出力され、以下のカラムが含まれます。
+
+- `date`: ISO形式の日付（YYYY-MM-DD）
+- `weekday`: 日本語の曜日記号
+- `to_aogashima_status`, `from_aogashima_status`: `operational` / `canceled` / `unknown`
+- `to_aogashima_operational`, `from_aogashima_operational`: 運航=1、欠航=0、不明は空欄
+- `max_wind_direction`: 方位のみを抽出
+- `max_wind_speed_mps`: 風速（m/s）の数値
+
+欠損・不正なステータスや、`max_wind` に含まれる余分な括弧の検出数は実行結果として表示されます。
