@@ -51,3 +51,5 @@ uv run python plot_wind_scatter_interactive.py
 ```
 
 `plots/wind_scatter_interactive.html` が生成され、ブラウザで開くと `operational` / `canceled` / `unknown` をチェックボックスで制御できます。X軸は東西（+が東）、Y軸は南北（+が北）方向の風速成分です。
+
+- 「月」セレクトで、全期間（all）または特定の月（1〜12月）のデータに絞り込めます（シーズナリティ確認用）。
