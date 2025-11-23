@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aogashima 可視化リンク</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --accent2: #c084fc;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 20% 20%, #0b1224, #0f172a 45%), #0f172a;
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 32px 20px 12px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.02em;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto 32px;
+    }
+    @media (min-width: 720px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .card {
+      background: linear-gradient(145deg, #111827, #0b1224);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #fff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .card p {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .actions {
+      margin-top: auto;
+    }
+    .link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: #fff;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.04);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .link:hover {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: var(--accent);
+    }
+    .link span {
+      font-weight: 600;
+    }
+    footer {
+      text-align: center;
+      padding: 0 20px 24px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Aogashima データ可視化</h1>
+    <p>クレンジング済みデータの散布図と回帰結果へのショートカット</p>
+  </header>
+  <main class="grid">
+    <article class="card">
+      <div class="badge">Plotly</div>
+      <h2>風速ベクトル散布図</h2>
+      <p>運航ステータスをマーカーで色分け。月フィルタやチェックボックスで視覚的に探索できます。</p>
+      <div class="actions">
+        <a class="link" href="wind_scatter_interactive.html" target="_blank" rel="noopener">
+          <span>開く</span>
+        </a>
+      </div>
+    </article>
+    <article class="card">
+      <div class="badge">Regression</div>
+      <h2>欠航確率（to航路）</h2>
+      <p>風速のみを説明変数にしたロジスティック回帰。生データ点と推定曲線を表示します。</p>
+      <div class="actions">
+        <a class="link" href="wind_regression_to.html" target="_blank" rel="noopener">
+          <span>開く</span>
+        </a>
+      </div>
+    </article>
+    <article class="card">
+      <div class="badge">Regression</div>
+      <h2>欠航確率（from航路）</h2>
+      <p>青ヶ島発→八丈島行きのロジスティック回帰。風速と欠航確率の関係を確認できます。</p>
+      <div class="actions">
+        <a class="link" href="wind_regression_from.html" target="_blank" rel="noopener">
+          <span>開く</span>
+        </a>
+      </div>
+    </article>
+  </main>
+  <footer>docs配下のHTMLは直接開いて閲覧できます。</footer>
+</body>
+</html>
