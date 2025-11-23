@@ -41,3 +41,13 @@ uv run python clean_aogashima_data.py
 - `max_wind_speed_mps`: 風速（m/s）の数値
 
 欠損・不正なステータスや、`max_wind` に含まれる余分な括弧の検出数は実行結果として表示されます。
+
+## 最大風速の散布図を描く
+
+クレンジング済みCSVを東西・南北のベクトル成分に分解し、運航ステータス別にマーカーを変えた散布図を描画できます。
+
+```bash
+uv run python plot_wind_scatter_interactive.py
+```
+
+`plots/wind_scatter_interactive.html` が生成され、ブラウザで開くと `operational` / `canceled` / `unknown` をチェックボックスで制御できます。X軸は東西（+が東）、Y軸は南北（+が北）方向の風速成分です。
